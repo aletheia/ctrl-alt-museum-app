@@ -1,79 +1,176 @@
-import {Box, Button, Heading, Text} from '@chakra-ui/react';
+import {
+  Box,
+  Button,
+  Container,
+  Heading,
+  Input,
+  Menu,
+  Spacer,
+  Spinner,
+  Text,
+  VStack,
+} from '@chakra-ui/react';
 import {ethers} from 'ethers';
 import {FC, useEffect, useState} from 'react';
 
-import contract from '../../abi/Retro.json';
+import addresses from '../../config/contractAddresses.json';
+import contract from '../../config/abi/Retro.json';
+import AddTokenToWallet from '../AddTokenToWallet';
 
 export interface ContractProps {
-  address: string;
-  provider: ethers.providers.Web3Provider;
+  enabled: boolean;
 }
 
 const RetroContract: FC<ContractProps> = props => {
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const [contractInstance, setContractInstance] = useState<
     ethers.Contract | undefined
   >();
   const [currentAccount, setCurrentaccount] = useState<string | undefined>(
     null
   );
-  const [isMinted, setMinted] = useState<boolean | undefined>(false);
+  const [isProcessing, setProcessing] = useState<boolean | undefined>(false);
   const [receipt, setReceipt] = useState<
     ethers.providers.TransactionReceipt | undefined
   >(undefined);
-  const contractAddress = props.address;
+  const [destinationAddress, setDestinationAddress] = useState<
+    string | undefined
+  >(null);
+  const contractAddress = addresses.retro;
 
-  useEffect(() => {
-    const contractInstance = async (
-      provider: ethers.providers.Web3Provider
-    ) => {
-      const accounts = await provider.send('eth_requestAccounts', []);
-      setCurrentaccount(accounts[0]);
-
-      const signer = await provider.getSigner();
-      const signerAddress = await signer.getAddress();
-
-      const instance = new ethers.Contract(
-        contractAddress,
-        contract.abi,
-        signer
-      );
-      setContractInstance(instance);
-    };
-    const {provider} = props;
-    if (props.provider) {
-      contractInstance(provider);
-    }
-  }, [props.address, props.provider]);
+  const istantiateContract = async () => {
+    const provider = new ethers.providers.Web3Provider(
+      (window as any).ethereum
+    );
+    const accounts = await provider.send('eth_requestAccounts', []);
+    const signer = await provider.getSigner();
+    const signerAddress = await signer.getAddress();
+    const instance = new ethers.Contract(contractAddress, contract.abi, signer);
+    setCurrentaccount(accounts[0]);
+    setContractInstance(instance);
+  };
 
   const mintTokens = async () => {
+    setIsLoading(true);
     const instance = contractInstance;
     if (instance) {
-      const tx = await instance.mint(currentAccount, 1);
-      const receipt = await tx.wait();
-      setReceipt(receipt);
-      setMinted(true);
+      try {
+        const tx = await instance.mint(currentAccount, 1);
+        const receipt = await tx.wait();
+        setReceipt(receipt);
+        setProcessing(true);
+      } catch (e) {
+        console.log('cannot mint tokens', e);
+      }
+    } else {
+      console.log('no contract instance');
+    }
+    setIsLoading(false);
+  };
+
+  const sendTokens = async () => {
+    setDestinationAddress('0x8D17D2B0C236E7E6AFfe662E830Ea04eD135c595');
+    const instance = contractInstance;
+
+    if (instance) {
+      try {
+        const tx = await instance.transfer(
+          destinationAddress,
+          ethers.utils.parseUnits('1', 18)
+        );
+        const receipt = await tx.wait();
+        setReceipt(receipt);
+        setProcessing(true);
+      } catch (e) {
+        console.log('cannot send tokens', e);
+      }
+    } else {
+      console.log('Contract is not istantiated');
     }
   };
+
+  const setReceiverAddress = async (event: {target: {value: string}}) => {
+    let address = event.target.value.trim();
+    address = address.length > 0 ? address : null;
+    setDestinationAddress(address);
+  };
+
+  useEffect(() => {
+    if (props.enabled) {
+      istantiateContract();
+    }
+  }, [props.enabled]);
 
   return (
     <>
       <Box border="1px solid gray" borderRadius="lg" p={4} m="4">
-        <Heading size="lg">Retro Contract</Heading>
-        <Text>contract address: {contractAddress}</Text>
-        <Button onClick={mintTokens}>Mint Tokens</Button>
-        <Text>minted 1 token(s) to {currentAccount}</Text>
-        {isMinted && !receipt && (
-          <>
-            <Box>Waiting for confirmation...</Box>
-          </>
+        {props.enabled && !isLoading && (
+          <VStack spacing={4}>
+            <Menu>
+              <Heading size="lg">Retro Contract </Heading>
+              <AddTokenToWallet
+                tokenAddress={contractAddress}
+                tokenDecimals={0}
+                tokenImage="http://placekitten.com/200/300"
+                tokenSymbol="RTO"
+              />
+              <Text>{contractAddress}</Text>
+            </Menu>
+            <Spacer />
+            <VStack align="left">
+              <Heading size="sm">Mint Tokens</Heading>
+              <Text>
+                Invoke smart contract method to mint a RTO token to your wallet.
+                It should take a few seconds to be processed by BSC testnet
+              </Text>
+              <Button onClick={mintTokens}>Mint Tokens</Button>
+            </VStack>
+            <Spacer />
+            <VStack align="left">
+              <Heading size="sm">Transfer tokens</Heading>
+              <Text>
+                Invoke smart contract method to transfer a token from one wallet
+                to another
+              </Text>
+              <Input
+                id="receiverAddress"
+                placeholder="Receiver Address"
+                onChange={setReceiverAddress}
+              />
+              <Button
+                onClick={sendTokens}
+                disabled={destinationAddress === null}
+              >
+                Send Tokens
+              </Button>
+            </VStack>
+            {receipt && (
+              <>
+                <Spacer />
+                <VStack align="left">
+                  <Heading size="sm">Latest Receipt</Heading>
+                  <Text>
+                    <small>Block Number: {receipt.blockNumber}</small>
+                  </Text>
+                  <Text>
+                    <small>Transaction Hash: {receipt.transactionHash}</small>
+                  </Text>
+                </VStack>
+              </>
+            )}
+          </VStack>
         )}
-        {receipt && (
+
+        {!props.enabled && (
+          <Heading size="sm">Retro Contract is disabled</Heading>
+        )}
+
+        {isLoading && (
           <>
-            <Box>
-              <Heading size="sm">Latest Receipt</Heading>
-              <Text>Block Number: {receipt.blockNumber}</Text>
-              <Text>Transaction Hash: {receipt.transactionHash}</Text>
-            </Box>
+            <Container>
+              <Heading size="sm">Loading...</Heading>
+              <Spinner />
+            </Container>
           </>
         )}
       </Box>
@@ -84,3 +181,4 @@ const RetroContract: FC<ContractProps> = props => {
 export default RetroContract;
 
 // NOTE: https://blog.logrocket.com/building-dapp-ethers-js/#getting-started-ethers-js
+// NOTE: https://lzomedia.com/blog/tutorial-build-dapp-with-hardhat-react-and-ethers-js/

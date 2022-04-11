@@ -6,10 +6,6 @@ import {useState, useEffect} from 'react';
 import {chainIdToNetwork} from '../../util/constants';
 import RetroContract from '../RetroContract';
 
-declare let window: {
-  ethereum: unknown;
-};
-
 const MetamaskConnect: FC = () => {
   const [currentProvider, setCurrentProvider] = useState<
     ethers.providers.Web3Provider | undefined
@@ -23,11 +19,14 @@ const MetamaskConnect: FC = () => {
   useEffect(() => {}, [currentAccount]);
 
   const isMetamaskAvailable = () => {
-    return typeof window.ethereum !== 'undefined';
+    return typeof (window as any).ethereum !== 'undefined';
   };
 
   const connectToMetamask = async () => {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    const provider = new ethers.providers.Web3Provider(
+      (window as any).ethereum
+    );
+
     setCurrentProvider(provider);
     const accounts = await provider.send('eth_requestAccounts', []);
     setCurrentAccount(accounts[0]);
@@ -85,12 +84,12 @@ const MetamaskConnect: FC = () => {
           </>
         )}
       </Box>
-      <RetroContract
-        address="0x27f924b8339ba0B7a828106697EeEb28c861943f"
-        provider={currentProvider}
-      />
+      <RetroContract enabled={currentAccount != null} />
     </>
   );
 };
 
 export default MetamaskConnect;
+
+// TODO: Retro contract address 0x18671cEb32551442684C20eeD0Af95abB88C8ea5
+// TODO: RetroMachine contract address 0x06C3748EC6471808C37f73fc5b49006ec1eb1A6C
