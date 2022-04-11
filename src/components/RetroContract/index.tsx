@@ -4,18 +4,21 @@ import {
   Container,
   Heading,
   Input,
+  Link,
   Menu,
   Spacer,
   Spinner,
   Text,
   VStack,
 } from '@chakra-ui/react';
-import {ethers} from 'ethers';
+import {ExternalLinkIcon} from '@chakra-ui/icons';
+
 import {FC, useEffect, useState} from 'react';
 
 import addresses from '../../config/contractAddresses.json';
 import contract from '../../config/abi/Retro.json';
 import AddTokenToWallet from '../AddTokenToWallet';
+import {ethers} from 'ethers';
 
 export interface ContractProps {
   enabled: boolean;
@@ -44,7 +47,6 @@ const RetroContract: FC<ContractProps> = props => {
     );
     const accounts = await provider.send('eth_requestAccounts', []);
     const signer = await provider.getSigner();
-    const signerAddress = await signer.getAddress();
     const instance = new ethers.Contract(contractAddress, contract.abi, signer);
     setCurrentaccount(accounts[0]);
     setContractInstance(instance);
@@ -69,7 +71,7 @@ const RetroContract: FC<ContractProps> = props => {
   };
 
   const sendTokens = async () => {
-    setDestinationAddress('0x8D17D2B0C236E7E6AFfe662E830Ea04eD135c595');
+    setIsLoading(true);
     const instance = contractInstance;
 
     if (instance) {
@@ -87,6 +89,7 @@ const RetroContract: FC<ContractProps> = props => {
     } else {
       console.log('Contract is not istantiated');
     }
+    setIsLoading(false);
   };
 
   const setReceiverAddress = async (event: {target: {value: string}}) => {
@@ -153,7 +156,15 @@ const RetroContract: FC<ContractProps> = props => {
                     <small>Block Number: {receipt.blockNumber}</small>
                   </Text>
                   <Text>
-                    <small>Transaction Hash: {receipt.transactionHash}</small>
+                    <small>
+                      Transaction Hash:{' '}
+                      <Link
+                        href={`https://testnet.bscscan.com/tx/${receipt.transactionHash}`}
+                        isExternal
+                      >
+                        {receipt.transactionHash} <ExternalLinkIcon mx="2px" />
+                      </Link>
+                    </small>
                   </Text>
                 </VStack>
               </>
