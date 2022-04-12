@@ -18,7 +18,7 @@ import {FC, useEffect, useState} from 'react';
 
 import addresses from '../../config/contractAddresses.json';
 import contract from '../../config/abi/RetroMachine.json';
-import AddTokenToWallet from '../AddTokenToWallet';
+import AddTokenToWallet, {TokenType} from '../AddTokenToWallet';
 import {ethers} from 'ethers';
 
 export interface ContractProps {
@@ -96,6 +96,7 @@ const RetroMachineContract: FC<ContractProps> = props => {
             <Menu>
               <Heading size="lg">RetroMachine NFT </Heading>
               <AddTokenToWallet
+                tokenType={TokenType.ERC721}
                 tokenAddress={contractAddress}
                 tokenDecimals={0}
                 tokenImage="http://placekitten.com/250/350"

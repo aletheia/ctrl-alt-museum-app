@@ -1,7 +1,12 @@
 import {Link} from '@chakra-ui/react';
 import {FC} from 'react';
 
+export enum TokenType {
+  ERC20 = 'ERC20',
+  ERC721 = 'ERC20',
+}
 export interface TokenProps {
+  tokenType: TokenType;
   tokenAddress: string;
   tokenSymbol: string;
   tokenDecimals: number;
@@ -10,13 +15,14 @@ export interface TokenProps {
 
 const AddTokenToWallet: FC<TokenProps> = props => {
   const addTokenToWallet = async () => {
-    const {tokenAddress, tokenDecimals, tokenImage, tokenSymbol} = props;
+    const {tokenAddress, tokenDecimals, tokenImage, tokenSymbol, tokenType} =
+      props;
     try {
       // wasAdded is a boolean. Like any RPC method, an error may be thrown.
       const wasAdded = await (window as any).ethereum.request({
         method: 'wallet_watchAsset',
         params: {
-          type: 'ERC20', // Initially only supports ERC20, but eventually more!
+          type: TokenType[tokenType], // Initially only supports ERC20, but eventually more!
           options: {
             address: tokenAddress, // The address that the token is at.
             symbol: tokenSymbol, // A ticker symbol or shorthand, up to 5 chars.
@@ -27,7 +33,7 @@ const AddTokenToWallet: FC<TokenProps> = props => {
       });
 
       if (wasAdded) {
-        console.log('Thanks for your interest!');
+        console.log('Token added to wallet!');
       } else {
         console.log('Your loss!');
       }

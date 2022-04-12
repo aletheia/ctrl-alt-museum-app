@@ -1,1 +1,7 @@
-{"retroMachine":"0xf79E857f0350086a04Abe6F34f47d4B2A5602A2a","retro":"0x3b07E6526bD26d771E9371A5a44c2179E61F4f2e","chainId":97,"chainName":"bnbt"}
+{
+  "retroMachine": "0x5ED02142E30786d4453987CC49ef7422C047146A",
+  "retro": "0x754238AF3281b3A914e0D92a74DD8bCA5bFD37C1",
+  "retroNFT": "0x400B7822A94A289EC60646e39c63f2e241153746",
+  "chainId": 97,
+  "chainName": "bnbt"
+}

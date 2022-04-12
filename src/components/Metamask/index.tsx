@@ -11,18 +11,40 @@ const MetamaskConnect: FC = () => {
   const [currentProvider, setCurrentProvider] = useState<
     ethers.providers.Web3Provider | undefined
   >();
+  /* Declaring a variable called balance and setting it to null. */
   const [balance, setBalance] = useState<string | undefined>(null);
+  /* Declaring a variable called currentAccount and setting it to null. */
   const [currentAccount, setCurrentAccount] = useState<string | undefined>(
     null
   );
+  /* Declaring a variable called chainId and setting it to null. */
   const [chainId, setChainId] = useState<number | undefined>(null);
 
-  useEffect(() => {}, [currentAccount]);
+  useEffect(() => {
+    if (isMetamaskAvailable()) {
+      const metamask = (window as any).ethereum;
+      metamask.on('accountsChanged', accounts => {
+        console.log('accountsChanges', accounts);
+        connectToMetamask();
+      });
+      metamask.on('chainChanged', networkId => {
+        console.log('networkChanged', networkId);
+        connectToMetamask();
+      });
+    }
+  }, [currentAccount]);
 
+  /**
+   * If the window object has a property called ethereum, then return true, otherwise return false.
+   * @returns The function isMetamaskAvailable is returning a boolean value.
+   */
   const isMetamaskAvailable = () => {
     return typeof (window as any).ethereum !== 'undefined';
   };
 
+  /**
+   * It connects to Metamask, gets the current account, gets the balance, and gets the chain ID
+   */
   const connectToMetamask = async () => {
     const provider = new ethers.providers.Web3Provider(
       (window as any).ethereum
@@ -44,46 +66,63 @@ const MetamaskConnect: FC = () => {
   return (
     <>
       <Box border="1px solid gray" borderRadius="lg" p={4} m="4">
-        {!isMetamaskAvailable() && <Text>Install Metamask</Text>}
+        {
+          // If the window object has a property called ethereum, then return true, otherwise return false.
+          // If ethereum object is not available, invite user to install metamask
+          !isMetamaskAvailable() && <Text>Install Metamask</Text>
+        }
 
-        {!currentAccount && (
-          <>
-            <Text>
-              Connect to Metamask to show your balance and access contract
-              methods
-            </Text>
-            <Center>
-              <Button onClick={connectToMetamask}>Connect your wallet</Button>
-            </Center>
-          </>
-        )}
-        {currentAccount && !chainId && (
-          <>
-            <Text>Loading...</Text>
-          </>
-        )}
-        {currentAccount && chainId && (
-          <>
-            <Center>
-              <Box p={4}>
-                <Text>
-                  <strong>Account address:</strong> {currentAccount}
-                </Text>
-                <Text>
-                  <strong>Balance:</strong> {balance}
-                  {chainIdToNetwork(chainId).coin}
-                </Text>
-                <Text>
-                  <strong>Chain:</strong> {chainIdToNetwork(chainId).name} (
-                  {chainId})
-                </Text>
-              </Box>
-            </Center>
-            <Center>
-              <Button onClick={disconnectAccount}>Disconnect</Button>
-            </Center>
-          </>
-        )}
+        {
+          // If an address is detected, connect the wallet
+          isMetamaskAvailable() && !currentAccount && (
+            <>
+              <Text>
+                Connect to Metamask to show your balance and access contract
+                methods
+              </Text>
+              <Center>
+                <Button onClick={connectToMetamask}>Connect your wallet</Button>
+              </Center>
+            </>
+          )
+        }
+
+        {
+          // Checking if the currentAccount is not null and the chainId is null. If that is true, then it will
+          // display the text "Loading...".
+          currentAccount && !chainId && (
+            <>
+              <Text>Loading...</Text>
+            </>
+          )
+        }
+
+        {
+          // Checking if the currentAccount is not null and the chainId is not null. If that is true, then it will
+          // display the text "Balance is..." and the balance.
+          currentAccount && chainId && (
+            <>
+              <Center>
+                <Box p={4}>
+                  <Text>
+                    <strong>Account address:</strong> {currentAccount}
+                  </Text>
+                  <Text>
+                    <strong>Balance:</strong> {balance}
+                    {chainIdToNetwork(chainId).coin}
+                  </Text>
+                  <Text>
+                    <strong>Chain:</strong> {chainIdToNetwork(chainId).name} (
+                    {chainId})
+                  </Text>
+                </Box>
+              </Center>
+              <Center>
+                <Button onClick={disconnectAccount}>Disconnect</Button>
+              </Center>
+            </>
+          )
+        }
       </Box>
       <RetroContract enabled={currentAccount !== null} />
       <RetroMachineContract enabled={currentAccount !== null} />
