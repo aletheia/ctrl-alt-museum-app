@@ -5,6 +5,7 @@ import {FC} from 'react';
 import {useState, useEffect} from 'react';
 import {chainIdToNetwork} from '../../util/constants';
 import RetroContract from '../RetroContract';
+import RetroMachineContract from '../RetroMachineContract';
 
 const MetamaskConnect: FC = () => {
   const [currentProvider, setCurrentProvider] = useState<
@@ -84,7 +85,8 @@ const MetamaskConnect: FC = () => {
           </>
         )}
       </Box>
-      <RetroContract enabled={currentAccount != null} />
+      <RetroContract enabled={currentAccount !== null} />
+      <RetroMachineContract enabled={currentAccount !== null} />
     </>
   );
 };
